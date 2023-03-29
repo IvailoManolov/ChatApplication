@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import Avatar from './Avatar'
 import Logo from './Logo'
+import {uniqBy} from 'lodash'
 import { UserContext } from './UserContext'
 
 const ChatComponent = () => {
@@ -9,6 +10,7 @@ const ChatComponent = () => {
   const[onlinePeople,setOnlinePeople] = useState({})
   const[selectedUserId,setSelectedUserId] = useState(null)
   const[newMessage,setNewMessage] = useState('')
+  const[messages,setMessages] = useState([])
 
   const {username,id} = useContext(UserContext)
 
@@ -36,7 +38,12 @@ const ChatComponent = () => {
     const message = JSON.parse(e.data)
 
     if(message.online){
+      console.log(message)
       showOnlinePeople(message.online)
+    }
+    else if(message.text){
+      console.log({message})
+      setMessages(prev => ([...prev,{...message}]))
     }
   }
 
@@ -49,11 +56,20 @@ const ChatComponent = () => {
         text : newMessage
       }
     }))
+
+    setMessages(prev => ([...prev,{
+      text : newMessage,
+      sender : id,
+      recipient : selectedUserId
+      }]))
+    setNewMessage('')
   }
 
   const excludedMe = {...onlinePeople}
 
   delete excludedMe[id]
+
+  let messageWithoutDupe = uniqBy(messages,'id')
 
   return (
     <div className='flex h-screen'>
@@ -93,6 +109,16 @@ const ChatComponent = () => {
                   <div className='text-gray-400'>
                    &larr; Select a conversation!
                   </div>
+                </div>
+              )}
+
+              {selectedUserId && (
+                <div>
+                  {messageWithoutDupe.map(message => (
+                    <div>
+                      {message.text}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

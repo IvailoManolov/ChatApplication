@@ -10,8 +10,6 @@ const Avatar = (props) => {
 
     const color = colors[colorIndex]
 
-    console.log(color)
-
   return (
     <div className={'w-8 h-8 rounded-full flex items-center ' + color}>
         <div className='text-center w-full opacity-70'>

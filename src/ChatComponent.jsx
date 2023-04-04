@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import Avatar from './Avatar'
+
 import Logo from './Logo'
 import {uniqBy} from 'lodash'
 import { UserContext } from './UserContext'
@@ -17,7 +17,7 @@ const ChatComponent = () => {
 
   const divUnderMessage = useRef()
 
-  const {username,id} = useContext(UserContext)
+  const {username,id,setId,setUsername} = useContext(UserContext)
 
   useEffect(() => {
     connectToWs()
@@ -43,6 +43,13 @@ const ChatComponent = () => {
     })
 
     setOnlinePeople(people)
+  }
+
+  async function logout(){
+    const response = await axios.post('/logout')
+    setWs(null)
+    setId(null)
+    setUsername(null)
   }
 
   function selectContact(userId){
@@ -126,7 +133,8 @@ const ChatComponent = () => {
   return (
     <div className='flex h-screen'>
 
-        <div className='bg-white w-1/3 '>
+        <div className='bg-white w-1/3 flex flex-col'>
+          <div className='flex-grow'>
           <Logo/>
           {Object.keys(excludedMe).map(userId => (
             <Contact 
@@ -147,6 +155,14 @@ const ChatComponent = () => {
             online = {false}
              />
           ))}
+          </div>
+          <div className='p-5 text-center '>
+            <button className='text-sm bg-blue-100 py-1 px-2 border rounded-sm text-gray-500'
+            onClick={() => logout()}
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className = 'flex flex-col bg-blue-50 w-2/3 p-2'>

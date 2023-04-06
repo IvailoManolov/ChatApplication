@@ -44,7 +44,7 @@ const Register = () => {
               {isLoginOrRegister === 'register' && (
                 <div>
                   Already a member? 
-                  <button onClick={() => setIsLoginOrRegister('login')} >
+                  <button className='ml-1' onClick={() => setIsLoginOrRegister('login')} >
                     Login here
                   </button>
                 </div>

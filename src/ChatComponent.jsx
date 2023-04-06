@@ -35,6 +35,19 @@ const ChatComponent = () => {
     })
   }
 
+  async function sendFile(ev){
+    const reader = new FileReader()
+
+    reader.readAsDataURL(ev.target.files[0])
+
+    reader.onload = () => {
+      sendMessage(null,{
+        name : ev.target.files[0].name,
+        data : reader.result
+      })
+    }
+  }
+
   function showOnlinePeople(peopleArray){
     const people = {}
 
@@ -63,26 +76,39 @@ const ChatComponent = () => {
       showOnlinePeople(message.online)
     }
     else if(message.text){
-      setMessages(prev => ([...prev,{...message}]))
+      if(message.sender === selectedUserId){
+        setMessages(prev => ([...prev,{...message}]))
+      }
     }
   }
 
-  function sendMessage(e){
-    e.preventDefault()
+  function sendMessage(e,file = null){
+
+    if(e) e.preventDefault()
 
     ws.send(JSON.stringify({
       message : {
         recipient : selectedUserId,
-        text : newMessage
+        text : newMessage,
+        file
       }
     }))
 
-    setMessages(prev => ([...prev,{
-      text : newMessage,
-      sender : id,
-      recipient : selectedUserId,
-      _id : Date.now()
-      }]))
+    
+      if(file){
+        axios.get('/messages/' + selectedUserId).then(res => {
+          setMessages(res.data)
+        })
+
+      }
+      else{
+        setMessages(prev => ([...prev,{
+          text : newMessage,
+          sender : id,
+          recipient : selectedUserId,
+          _id : Date.now()
+          }]))    
+      }
 
     setNewMessage('')
   }
@@ -183,6 +209,16 @@ const ChatComponent = () => {
                       <div key={message._id} className={(message.sender === id ? 'text-right': 'text-left')}>
                         <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " +(message.sender === id ? 'bg-blue-500 text-white':'bg-white text-gray-500')}>
                           {message.text}
+                          {message.file && (
+                            <div className='flex items-center gap-2'>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                              </svg>
+                                <a target='_blank' className='items-center underline' href ={axios.defaults.baseURL + '/uploads/' + message.file}>
+                                  {message.file}
+                                </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -198,6 +234,13 @@ const ChatComponent = () => {
               onChange = {ev => setNewMessage(ev.target.value)}
                placeholder='Type your message here'
                 className='bg-white flex-grow border rounded-sm p-2' />
+
+                <label type='button' className='bg-gray-300 p-2 text-gray-600 cursor-pointer rounded-sm border border-blue-200'>
+                  <input type='file' className='hidden' onChange={sendFile}/>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                  </svg>
+                </label>
 
                 <button type='submit' className='bg-blue-500 p-2 text-white rounded-sm'>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">

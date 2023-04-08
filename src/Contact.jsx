@@ -4,7 +4,7 @@ import Avatar from './Avatar'
 const Contact = (props) => {
   return (
     <div key = {props.userId} 
-            onClick={() => props.selectContact(props.userId)} 
+    onClick={() => props.onClick(props.userId)}
             className={'border-b border-gray-100 flex items-center gap-3 cursor-pointer ' + (props.selected ? 'bg-purple-50' : '')}
             >
 

@@ -13,6 +13,7 @@ const ChatComponent = () => {
   const[offlinePeople,setOfflinePeople] = useState({})
   const[selectedUserId,setSelectedUserId] = useState(null)
   const[newMessage,setNewMessage] = useState('')
+  const [isWsOpen,setIsWsOpen] = useState(false)
   const[messages,setMessages] = useState([])
 
   const divUnderMessage = useRef()
@@ -20,18 +21,30 @@ const ChatComponent = () => {
   const {username,id,setId,setUsername} = useContext(UserContext)
 
   useEffect(() => {
-    if(ws){
-      ws.close()
-      setWs(null)
+    if(isWsOpen){
+      ws.onclose=()=>{
+        setIsWsOpen(false)
+        connectToWs()
+      }
+      ws.close();
     }
-    connectToWs()
+    else{
+      connectToWs()
+    }
   },[selectedUserId])
 
-  function connectToWs(){
-    console.log("Connecting to WS ");
-    const ws = new WebSocket('ws://localhost:5000')
-    setWs(ws)
+  useEffect(()=>{
+    if(ws){
+      ws.onopen=()=>{
+        setIsWsOpen(true)
+      }
     ws.addEventListener('message',handleMessage)
+    }
+  },[ws])
+
+  function connectToWs(){
+    let ws = new WebSocket('ws://localhost:5000')
+    setWs(ws)
   }
 
   async function sendFile(ev){
@@ -65,7 +78,9 @@ const ChatComponent = () => {
   }
 
   function handleMessage(e){
+    console.log("Handling message")
     const message = JSON.parse(e.data)
+    console.log(message)
 
     if(message.online){
       showOnlinePeople(message.online)
@@ -73,13 +88,15 @@ const ChatComponent = () => {
     else if(selectedUserId && (message.text || message.file)){
       if(message.sender === selectedUserId){
         
-        // Let them know that message is received.
-        ws.send(JSON.stringify({
-          messageReceived : {
-            read : true
-          }
-        }));
-        
+        if(ws.readyState === 1){
+          console.log("Sending read signal")
+          ws.send(JSON.stringify({
+            message : {
+              messageRead:true
+            }
+          }));
+        }
+
         setMessages(prev => ([...prev,{...message}]))
       }
     }
@@ -106,6 +123,10 @@ const ChatComponent = () => {
 
     //Send the message among the file and initial flag read to false.
     console.log("Sending message to " + selectedUserId)
+    
+    console.log(ws.readyState)
+    console.log(ws)
+
     ws.send(JSON.stringify({
       message : {
         recipient : selectedUserId,

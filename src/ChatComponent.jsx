@@ -14,6 +14,7 @@ const ChatComponent = () => {
   const[selectedUserId,setSelectedUserId] = useState(null)
   const[newMessage,setNewMessage] = useState('')
   const [isWsOpen,setIsWsOpen] = useState(false)
+  const[messageNot,setMessageNot] = useState(false)
   const[messages,setMessages] = useState([])
 
   const divUnderMessage = useRef()
@@ -41,6 +42,23 @@ const ChatComponent = () => {
     ws.addEventListener('message',handleMessage)
     }
   },[ws])
+
+  useEffect(() => {
+    if(messageNot){
+    const updatedMessages = [...messages]
+
+      updatedMessages.forEach(message => {
+        if(!message.read){
+          message.read = ''
+        }
+
+        if(message.read === '' || message.read === false){
+          message.read = true
+        }
+      })
+        setMessages(updatedMessages)
+    }
+  },[messageNot])
 
   function connectToWs(){
     let ws = new WebSocket('ws://localhost:5000')
@@ -80,25 +98,33 @@ const ChatComponent = () => {
   function handleMessage(e){
     console.log("Handling message")
     const message = JSON.parse(e.data)
-    console.log(message)
 
     if(message.online){
       showOnlinePeople(message.online)
     }
+
     else if(selectedUserId && (message.text || message.file)){
       if(message.sender === selectedUserId){
         
         if(ws.readyState === 1){
+
           console.log("Sending read signal")
+
           ws.send(JSON.stringify({
             message : {
+              recipient : selectedUserId,
               messageRead:true
             }
           }));
+
         }
 
         setMessages(prev => ([...prev,{...message}]))
       }
+    }
+
+    else if(selectedUserId && message.messageRead){
+      setMessageNot(true)
     }
   }
 
@@ -123,9 +149,6 @@ const ChatComponent = () => {
 
     //Send the message among the file and initial flag read to false.
     console.log("Sending message to " + selectedUserId)
-    
-    console.log(ws.readyState)
-    console.log(ws)
 
     ws.send(JSON.stringify({
       message : {
@@ -161,11 +184,12 @@ const ChatComponent = () => {
           date : formattedDate
           }]))    
       }
-
+    console.log("Message Notification allowed")
     setNewMessage('')
   }
 
   useEffect(() => {
+    setMessageNot(false)
     const div = divUnderMessage.current
     if(div){
       div.scrollIntoView({behavior : 'smooth', block:'end'})
@@ -176,6 +200,8 @@ const ChatComponent = () => {
   useEffect(() => {
     async function getMessages(){
 
+      await axios.post('/messages/read/' + selectedUserId)
+
       const messageData = await axios.get('/messages/' + selectedUserId)
 
       //Change date to be right format
@@ -184,13 +210,6 @@ const ChatComponent = () => {
         const formattedDate = `${tempDate.getMonth() + 1}/${tempDate.getDate()}/${tempDate.getFullYear()}, ${formatAMPM(tempDate)}`;
         message.date = formattedDate
       })
-
-
-      //Change flags of the messages to indicate they are read.
-
-
-      //Let the recipient know that the messages are viewed.
-
 
       //Set the messages so they will be visible.
       setMessages(messageData.data)
@@ -298,11 +317,14 @@ const ChatComponent = () => {
                           )}
                             <div className='flex -bottom-1 p-2 my-0.5 right-1 h-4 w-15 text-xs text-gray-300 '>
                                 {message.date}
-                                <div className={message.read ? 'text-blue-600' : ''}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 35" stroke-width="1.2" stroke="currentColor" class="w-5 h-5">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                                </svg>
-                                </div>
+                                {message.sender !== id ? (<></>) : (<>
+                                  <div className={message.read ? 'text-blue-600' : ''}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 35" stroke-width="1.2" stroke="currentColor" class="w-5 h-5">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                                    </svg>
+                                  </div>
+                                </>)}
+                                
                             </div>
                           </div>
                           

@@ -13,7 +13,7 @@ const ChatComponent = () => {
   const[offlinePeople,setOfflinePeople] = useState({})
   const[selectedUserId,setSelectedUserId] = useState(null)
   const[newMessage,setNewMessage] = useState('')
-  const [isWsOpen,setIsWsOpen] = useState(false)
+  const[isWsOpen,setIsWsOpen] = useState(false)
   const[messageNot,setMessageNot] = useState(false)
   const[messages,setMessages] = useState([])
 
@@ -277,8 +277,19 @@ const ChatComponent = () => {
           ))}
 
           </div>
-          <div className='p-5 text-center '>
-            <button className='text-sm bg-blue-100 py-1 px-2 border rounded-sm text-gray-500'
+
+          <div>
+            <hr/>
+          </div>
+          <div className='p-5 text-center flex justify-between'>
+          <div className={'w-8 h-8 relative rounded-full flex items-center bg-red-200'}>
+
+            <div className='text-center w-full opacity-70'>
+              {username[0]}
+            </div>
+          </div>
+
+            <button className='text-sm bg-green-100 py-1 px-2 border rounded-sm text-gray-500'
             onClick={() => logout()}
             >
               Logout
@@ -286,8 +297,7 @@ const ChatComponent = () => {
           </div>
         </div>
 
-        <div className = 'flex flex-col bg-blue-50 w-2/3 p-2'>
-
+        <div className = 'flex flex-col bg-green-50 w-2/3 p-2'>
             <div className='flex-grow'>
               {!selectedUserId && (
                 <div className='flex h-full items-center justify-center'>
